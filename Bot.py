@@ -1,42 +1,30 @@
 import os
 from flask import Flask, request
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+import requests
 
-TOKEN = os.getenv("BOT_TOKEN")
-URL = os.getenv("RENDER_EXTERNAL_URL")  # Render sets this automatically
+TOKEN = os.getenv("BOT_TOKEN")  # Make sure BOT_TOKEN is set in Render environment
+URL = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
-flask_app = Flask(__name__)
-tg_app = Application.builder().token(TOKEN).build()
+app = Flask(__name__)
 
-# /start handler
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Message received, wait for reply")
-
-# Reply to all text messages
-async def reply_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Message received, wait for reply")
-
-tg_app.add_handler(CommandHandler("start", start))
-tg_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply_all))
-
-# Webhook endpoint
-@flask_app.post(f"/webhook/{TOKEN}")
-def webhook():
-    update = Update.de_json(request.get_json(force=True), tg_app.bot)
-    tg_app.update_queue.put_nowait(update)
-    return "ok"
-
-@flask_app.get("/")
+@app.route("/")
 def home():
-    return "Bot is running ✅"
+    return "Bot is running!"
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    tg_app.run_webhook(
-        listen="0.0.0.0",
-        port=port,
-        url_path=f"webhook/{TOKEN}",
-        webhook_url=f"{URL}/webhook/{TOKEN}"
-    )
-    flask_app.run(host="0.0.0.0", port=port)
+@app.route("/", methods=["POST"])
+def webhook():
+    data = request.get_json()
+
+    if "message" in data:
+        chat_id = data["message"]["chat"]["id"]
+        text = "message received wait for reply"
+
+        requests.post(URL, json={
+            "chat_id": chat_id,
+            "text": text
+        })
+
+    return {"ok": True}
+
+# Gunicorn will look for "app"
+flask_app = app
