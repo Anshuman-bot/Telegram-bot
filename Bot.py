@@ -1,72 +1,49 @@
 import os
-import threading
-import logging
-from flask import Flask
+import ssl
+import certifi
+from flask import Flask, request
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes
+from telegram.request import HTTPXRequest
 
-# ======================
-# Environment Variables
-# ======================
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-OWNER_ID = int(os.getenv("OWNER_ID"))  # Telegram numeric user ID
+# ---------------- Flask App ----------------
+app = Flask(__name__)
 
-# ======================
-# Logging
-# ======================
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+# ---------------- Telegram Bot Setup ----------------
+TOKEN = os.getenv("BOT_TOKEN")  # Set in Render Environment Variables
 
-# ======================
-# Telegram Bot Handlers
-# ======================
+# Force HTTPS with certifi
+request = HTTPXRequest(ssl_context=ssl.create_default_context(cafile=certifi.where()))
+
+# Create application
+application = Application.builder().token(TOKEN).request(request).build()
+
+# ---------------- Handlers ----------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("message is received wait for the reply")
+    await update.message.reply_text("👋 Hello! Your bot is up and running on Render!")
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.message.from_user
-    text = update.message.text
+application.add_handler(CommandHandler("start", start))
 
-    logger.info(f"Message from {user.first_name} (@{user.username}): {text}")
+# ---------------- Flask Webhook Route ----------------
+@app.route("/webhook", methods=["POST"])
+async def webhook():
+    """Receive updates from Telegram and feed them to PTB"""
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    await application.process_update(update)
+    return "ok", 200
 
-    # Reply to user
-    await update.message.reply_text("message is received wait for the reply")
-
-    # Forward to owner
-    forward_text = f"📩 Message from {user.first_name} (@{user.username}):\n\n{text}"
-    await context.bot.send_message(chat_id=OWNER_ID, text=forward_text)
-
-def run_bot():
-    app = Application.builder().token(BOT_TOKEN).build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    print("Bot is running...")
-    app.run_polling()
-
-# ======================
-# Flask (for Render)
-# ======================
-flask_app = Flask(__name__)
-
-@flask_app.route('/')
+@app.route("/")
 def home():
-    return "Telegram bot is running!"
+    return "🤖 Bot is running!", 200
 
-def run_flask():
-    port = int(os.environ.get("PORT", 5000))
-    flask_app.run(host="0.0.0.0", port=port)
-
-# ======================
-# Main
-# ======================
+# ---------------- Run ----------------
 if __name__ == "__main__":
-    # Start Flask server in background
-    threading.Thread(target=run_flask).start()
+    port = int(os.environ.get("PORT", 5000))
+    # Set webhook (only once when container starts)
+    import asyncio
+    async def set_webhook():
+        url = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/webhook"
+        await application.bot.set_webhook(url)
+    asyncio.run(set_webhook())
 
-    # Start Telegram bot
-    run_bot()
+    app.run(host="0.0.0.0", port=port)
