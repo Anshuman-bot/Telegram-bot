@@ -1,28 +1,28 @@
 import os
-print("=== DEBUG ENVIRONMENT VARIABLES ===")
-print(os.environ)   # show all environment variables available
-print("BOT_TOKEN =", os.getenv("BOT_TOKEN"))
-print("=================================")
-import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Hello! Please reply with your message.")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+OWNER_ID = int(os.getenv("OWNER_ID"))  # your Telegram user ID
 
+# /start command
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("message is received wait for the reply")
+
+# Handle replies
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_message = update.message.text
-    await update.message.reply_text(f"Got your reply: {user_message}")
+    user = update.message.from_user
+    text = update.message.text
+
+    # Auto-reply to user
+    await update.message.reply_text("message is received wait for the reply")
+
+    # Forward message to owner
+    forward_text = f"📩 Message from {user.first_name} (@{user.username}):\n\n{text}"
+    await context.bot.send_message(chat_id=OWNER_ID, text=forward_text)
 
 def main():
-    token = os.getenv("BOT_TOKEN")
-
-    print("BOT_TOKEN from env:", token)   # Debug print
-
-    if not token:
-        raise ValueError("❌ BOT_TOKEN is missing. Please set it in Render Environment Variables.")
-
-    app = Application.builder().token(token).build()
+    app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
