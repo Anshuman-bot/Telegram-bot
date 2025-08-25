@@ -1,12 +1,17 @@
 import telebot
 import os
 
-API_TOKEN = os.getenv("BOT_TOKEN")  # use environment variable
+# ✅ Get the token from Render Environment Variables
+API_TOKEN = os.getenv("BOT_TOKEN")
 bot = telebot.TeleBot(API_TOKEN)
 
-@bot.message_handler(func=lambda message: True)
-def auto_reply(message):
-    bot.reply_to(message, "Hello! This is an auto-reply 🤖 (running on Render)")
+# 🔹 Clear any webhook before polling
+bot.remove_webhook()
 
-print("Bot is running...")
+# 🔹 Handle ALL messages (including /start and commands)
+@bot.message_handler(func=lambda message: True, content_types=['text'])
+def auto_reply(message):
+    bot.reply_to(message, "message received and wait for reply")
+
+print("✅ Bot is running on Render...")
 bot.infinity_polling()
