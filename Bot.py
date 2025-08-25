@@ -1,4 +1,9 @@
 import os
+print("=== DEBUG ENVIRONMENT VARIABLES ===")
+print(os.environ)   # show all environment variables available
+print("BOT_TOKEN =", os.getenv("BOT_TOKEN"))
+print("=================================")
+import os
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
