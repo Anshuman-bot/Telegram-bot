@@ -12,7 +12,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Got your reply: {user_message}")
 
 def main():
-    app = Application.builder().token(os.getenv("BOT_TOKEN")).build()
+    token = os.getenv("BOT_TOKEN")
+
+    if not token:
+        raise ValueError("❌ BOT_TOKEN is missing. Please set it in Render Environment Variables.")
+
+    # Debug: show first few characters so we know it's loaded
+    print(f"✅ Loaded BOT_TOKEN: {token[:10]}...")
+
+    app = Application.builder().token(token).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
