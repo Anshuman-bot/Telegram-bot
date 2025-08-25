@@ -1,6 +1,11 @@
 import os
 from flask import Flask, request
-from telegram import Bot, Update
+# CHANGE THIS LINE
+# from telegram import Bot, Update
+
+# TO THIS:
+from telegram import Bot
+from telegram.update import Update
 
 TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
