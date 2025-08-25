@@ -13,6 +13,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     token = os.getenv("BOT_TOKEN")
+    print("BOT_TOKEN from env:", os.getenv("BOT_TOKEN"))
 
     if not token:
         raise ValueError("❌ BOT_TOKEN is missing. Please set it in Render Environment Variables.")
