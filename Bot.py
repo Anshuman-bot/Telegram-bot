@@ -1,49 +1,30 @@
 import os
-import ssl
-import certifi
-from flask import Flask, request
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
-from telegram.request import HTTPXRequest
+from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
-# ---------------- Flask App ----------------
-app = Flask(__name__)
+# Load bot token from Railway Environment Variables
+TOKEN = os.getenv("BOT_TOKEN")
 
-# ---------------- Telegram Bot Setup ----------------
-TOKEN = os.getenv("BOT_TOKEN")  # Set in Render Environment Variables
-
-# Force HTTPS with certifi
-request = HTTPXRequest(ssl_context=ssl.create_default_context(cafile=certifi.where()))
-
-# Create application
-application = Application.builder().token(TOKEN).request(request).build()
-
-# ---------------- Handlers ----------------
+# /start handler
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Hello! Your bot is up and running on Render!")
+    await update.message.reply_text("Message received, wait for reply")
 
-application.add_handler(CommandHandler("start", start))
+# Reply to all text messages
+async def reply_all(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Message received, wait for reply")
 
-# ---------------- Flask Webhook Route ----------------
-@app.route("/webhook", methods=["POST"])
-async def webhook():
-    """Receive updates from Telegram and feed them to PTB"""
-    update = Update.de_json(request.get_json(force=True), application.bot)
-    await application.process_update(update)
-    return "ok", 200
+def main():
+    if not TOKEN:
+        raise ValueError("BOT_TOKEN not found! Please set it in Railway Environment Variables.")
 
-@app.route("/")
-def home():
-    return "🤖 Bot is running!", 200
+    app = Application.builder().token(TOKEN).build()
 
-# ---------------- Run ----------------
+    # Register handlers
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply_all))
+
+    # Start bot with polling (no port required)
+    app.run_polling()
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    # Set webhook (only once when container starts)
-    import asyncio
-    async def set_webhook():
-        url = f"https://{os.environ['RENDER_EXTERNAL_HOSTNAME']}/webhook"
-        await application.bot.set_webhook(url)
-    asyncio.run(set_webhook())
-
-    app.run(host="0.0.0.0", port=port)
+    main()
