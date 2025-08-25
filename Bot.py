@@ -2,7 +2,7 @@ import os
 from flask import Flask, request
 import requests
 
-TOKEN = os.getenv("BOT_TOKEN")  # Make sure BOT_TOKEN is set in Render environment
+TOKEN = os.getenv("BOT_TOKEN")  # Add BOT_TOKEN in Render environment
 URL = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 
 app = Flask(__name__)
@@ -26,5 +26,5 @@ def webhook():
 
     return {"ok": True}
 
-# Gunicorn will look for "app"
+# Gunicorn needs "app"
 flask_app = app
