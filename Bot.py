@@ -32,3 +32,25 @@ def main():
 
 if __name__ == "__main__":
     main()
+import logging
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+...
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.message.from_user
+    text = update.message.text
+
+    logger.info(f"Message from {user.first_name} (@{user.username}): {text}")
+
+    # Reply to user
+    await update.message.reply_text("message is received wait for the reply")
+
+    # Forward to owner
+    forward_text = f"📩 Message from {user.first_name} (@{user.username}):\n\n{text}"
+    await context.bot.send_message(chat_id=OWNER_ID, text=forward_text)
