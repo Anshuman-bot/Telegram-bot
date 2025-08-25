@@ -7,12 +7,10 @@ bot = Bot(token=TOKEN)
 
 app = Flask(__name__)
 
-# Health check route
 @app.route('/')
 def home():
     return "Bot is running fine ✅"
 
-# Webhook route
 @app.route('/webhook', methods=['POST'])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
