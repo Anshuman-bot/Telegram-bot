@@ -1,5 +1,4 @@
 import os
-import asyncio
 from flask import Flask, request
 from telegram import Bot, Update
 
@@ -15,12 +14,9 @@ def home():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     update = Update.de_json(request.get_json(force=True), bot)
-    chat_id = update.message.chat.id
-    text = update.message.text
-
-    # Run async send_message properly
-    asyncio.run(bot.send_message(chat_id=chat_id, text="Message received, wait for reply ✅"))
-
+    if update.message:  # ✅ prevent crash if no message
+        chat_id = update.message.chat.id
+        bot.send_message(chat_id=chat_id, text="Message received, wait for reply ✅")
     return "OK", 200
 
 if __name__ == "__main__":
