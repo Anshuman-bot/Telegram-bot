@@ -13,13 +13,10 @@ def home():
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    data = request.get_json(force=True)
-    update = Update.de_json(data, bot)
-    
-    if update.message:
-        chat_id = update.message.chat.id
-        bot.send_message(chat_id=chat_id, text="Message received, wait for reply ✅")
-    
+    update = Update.de_json(request.get_json(force=True), bot)
+    chat_id = update.message.chat.id
+    text = update.message.text
+    bot.send_message(chat_id=chat_id, text="Message received, wait for reply ✅")
     return "OK", 200
 
 if __name__ == "__main__":
