@@ -1,13 +1,10 @@
 import os
-import imghdr   # ✅ Fix for python-telegram-bot v20+
 from flask import Flask, request
 from telegram import Bot, Update
 
-# Get bot token from environment
 TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
 
-# Flask app
 app = Flask(__name__)
 
 @app.route('/')
